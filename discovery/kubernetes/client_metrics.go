@@ -230,6 +230,14 @@ func (clientGoCacheMetricsProvider) NewLastResourceVersionMetric(name string) ca
 // Definition of client-go workqueue metrics provider definition
 type clientGoWorkqueueMetricsProvider struct{}
 
+func (f *clientGoWorkqueueMetricsProvider) NewLatencyMetric(name string) workqueue.SummaryMetric {
+	return clientGoRequestLatencyMetricVec.WithLabelValues(name)
+}
+
+func (f *clientGoWorkqueueMetricsProvider) NewWorkDurationMetric(name string) workqueue.SummaryMetric {
+	return noopMetric{}
+}
+
 func (f *clientGoWorkqueueMetricsProvider) Register(registerer prometheus.Registerer) {
 	workqueue.SetProvider(f)
 	registerer.MustRegister(clientGoWorkqueueDepthMetricVec)
@@ -246,26 +254,6 @@ func (f *clientGoWorkqueueMetricsProvider) NewDepthMetric(name string) workqueue
 func (f *clientGoWorkqueueMetricsProvider) NewAddsMetric(name string) workqueue.CounterMetric {
 	return clientGoWorkqueueAddsMetricVec.WithLabelValues(name)
 }
-func (f *clientGoWorkqueueMetricsProvider) NewLatencyMetric(name string) workqueue.HistogramMetric {
-	metric := clientGoWorkqueueLatencyMetricVec.WithLabelValues(name)
-	// Convert microseconds to seconds for consistency across metrics.
-	return prometheus.ObserverFunc(func(v float64) {
-		metric.Observe(v / 1e6)
-	})
-}
-func (f *clientGoWorkqueueMetricsProvider) NewWorkDurationMetric(name string) workqueue.HistogramMetric {
-	metric := clientGoWorkqueueWorkDurationMetricVec.WithLabelValues(name)
-	// Convert microseconds to seconds for consistency across metrics.
-	return prometheus.ObserverFunc(func(v float64) {
-		metric.Observe(v / 1e6)
-	})
-}
-func (f *clientGoWorkqueueMetricsProvider) NewUnfinishedWorkSecondsMetric(name string) workqueue.SettableGaugeMetric {
-	return clientGoWorkqueueUnfinishedWorkSecondsMetricVec.WithLabelValues(name)
-}
-func (f *clientGoWorkqueueMetricsProvider) NewLongestRunningProcessorSecondsMetric(name string) workqueue.SettableGaugeMetric {
-	return clientGoWorkqueueLongestRunningProcessorMetricVec.WithLabelValues(name)
-}
 func (clientGoWorkqueueMetricsProvider) NewRetriesMetric(name string) workqueue.CounterMetric {
 	// Retries are not used so the metric is omitted.
 	return noopMetric{}
@@ -280,12 +268,6 @@ func (clientGoWorkqueueMetricsProvider) NewDeprecatedLatencyMetric(name string) 
 	return noopMetric{}
 }
 func (f *clientGoWorkqueueMetricsProvider) NewDeprecatedWorkDurationMetric(name string) workqueue.SummaryMetric {
-	return noopMetric{}
-}
-func (f *clientGoWorkqueueMetricsProvider) NewDeprecatedUnfinishedWorkSecondsMetric(name string) workqueue.SettableGaugeMetric {
-	return noopMetric{}
-}
-func (f *clientGoWorkqueueMetricsProvider) NewDeprecatedLongestRunningProcessorMicrosecondsMetric(name string) workqueue.SettableGaugeMetric {
 	return noopMetric{}
 }
 func (clientGoWorkqueueMetricsProvider) NewDeprecatedRetriesMetric(name string) workqueue.CounterMetric {
